@@ -1,0 +1,2 @@
+# canvas_drawBoard
+使用原生html和js结合canvas实现一个画板，其中画板具有保存绘制的图片、清空绘制的内容、设置画笔粗细等功能
