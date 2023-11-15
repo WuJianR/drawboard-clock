@@ -207,7 +207,7 @@ draw()
 
 可配置颜色、透明度、线型样式、线型渐变、径向渐变、图案样式、阴影等。
 
-详细可看[MDN——使用样式和颜色](https://developer.mozilla.org/zh-CN/docs/Web/API/Canvas_API/Tutorial/Applying_styles_and_colors#%E6%B8%90%E5%8F%98_gradients)
+api比较多，详细可看[MDN——使用样式和颜色](https://developer.mozilla.org/zh-CN/docs/Web/API/Canvas_API/Tutorial/Applying_styles_and_colors#%E6%B8%90%E5%8F%98_gradients)
 
 ## 四、绘制文本
 
@@ -570,4 +570,591 @@ draw();
 
 接下来，我们结合前面章节所学的知识，使用原生html和js实现一个画板，画板要具有保存图片、清除画板、设置画笔粗细功能。
 
+结果界面展示：
+
+![image-20231114202426309](C:\Users\22706\AppData\Roaming\Typora\typora-user-images\image-20231114202426309.png)
+
+功能演示：
+
+![画板结果演示gif](D:\upgrade\canvas\result\drawboard\画板结果演示gif.gif)
+
+保存的图片展示：
+
+![image-20231114202449624](C:\Users\22706\AppData\Roaming\Typora\typora-user-images\image-20231114202449624.png)
+
+下面我们看代码：
+
+`drawBoard.html`
+
+~~~html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>canvas</title>
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+
+        .main-box {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+            user-select: none;
+            .bgc {
+                z-index: -1;
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                object-fit: cover;
+            }
+
+            .operate-box {
+                height: 32px;
+                line-height: 30px;
+                display: flex;
+                /* column-gap: 20px; */
+                padding-left: 10px;
+                font-size: 20px;
+                background-color: rgba(255, 255, 255, .9);
+
+                .title {
+                    font-weight: 600;
+                    padding: 0 10px;
+                    margin-right: 20px;
+                }
+
+                .btn {
+                    cursor: pointer;
+                    padding: 0 5px;
+                }
+
+                .btn:hover {
+                    background-color: rgba(204, 204, 204, 0.8);
+                }
+            }
+
+            .canvas-box {
+                position: absolute;
+                top: calc(50% + 16px);
+                left: 50%;
+                transform: translate(-50%, -50%);
+                border-radius: 10px;
+                background-color: #fff;
+                padding: 10px;
+                box-shadow: 4px 5px 10px rgba(0, 0, 0, .7);
+            }
+        }
+
+        .dialog {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            z-index: 2;
+            display: none;
+            /* 文字无法选中 */
+            user-select: none;
+
+            .setting-box {
+                width: 400px;
+                height: 290px;
+                position: relative;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                border: 1px solid #ccc;
+                border-radius: 10px;
+                padding: 10px;
+                display: flex;
+                flex-direction: column;
+                background-color: #fff;
+
+                .header {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    font-size: 20px;
+
+                    .close {
+                        width: 24px;
+                        height: 24px;
+                        cursor: pointer;
+                    }
+                }
+
+                .content {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    flex: 1;
+
+                    .item {
+                        width: 100%;
+                        display: flex;
+                        align-items: center;
+
+                        .item-name {
+                            width: 80px;
+                            text-align: right;
+                            font-size: 18px;
+                        }
+
+                        .item-value {
+                            display: flex;
+                            align-items: center;
+
+                            .sub,
+                            .add {
+                                font-size: 26px;
+                                height: 20px;
+                                line-height: 18px;
+                                cursor: pointer;
+                            }
+
+                            .sub {
+                                margin: 0 6px 0 10px;
+                            }
+
+                            .add {
+                                margin: 0 10px 0 6px;
+                            }
+
+                            .progress-box {
+                                height: 20px;
+                                display: flex;
+                                align-items: center;
+                                width: 180px;
+                                cursor: pointer;
+                                .horizontal-line {
+                                    position: relative;
+                                    width: 100%;
+                                    height: 4px;
+                                    border: 1px solid #000;
+
+                                    .vertical-line {
+                                        position: absolute;
+                                        top: 50%;
+
+                                        transform: translateY(-50%);
+                                        height: 20px;
+                                        width: 4px;
+                                        background-color: #000;
+                                        border: 1px solid #000;
+                                    }
+                                }
+                            }
+
+                        }
+                    }
+                }
+
+                .footer {
+                    display: flex;
+                    align-items: center;
+                    padding: 0 100px;
+                    justify-content: space-between;
+                    font-size: 20px;
+
+                    .setting-confirm,
+                    .setting-reset {
+                        text-align: center;
+                        width: 60px;
+                        border: 1px solid #ccc;
+                        border-radius: 4px;
+                        cursor: pointer;
+                    }
+                }
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-box">
+        <!-- 背景图 -->
+        <img class="bgc" src="./bgc_1.jpg" alt="">
+        <!-- 操作栏 -->
+        <div class="operate-box">
+            <div class="title">这是一块画板</div>
+            <div class="btn" id="setting">设置</div>
+            <div class="btn" id="clear">清除</div>
+            <div class="btn" id="save">保存</div>
+        </div>
+        <div class="canvas-box">
+            <!-- 画布 -->
+            <canvas id="canvas">
+                <!-- 如果当前浏览器不支持canvas，将会显示盒子内的内容作为兜底提示 -->
+                current browoser not support canvas
+            </canvas>
+        </div>
+    </div>
+    <div class="dialog" id="dialog">
+        <div class="setting-box">
+            <div class="header">
+                <div class="theme">设置</div>
+                <img class="close" id="close" src="./close_icon.png" alt="关闭按钮"></img>
+            </div>
+            <div class="content">
+                <div class="item">
+                    <div class="item-name">线粗:</div>
+                    <div class="item-value">
+                        <div class="sub" id="sub">-</div>
+                        <div class="progress-box" id="line">
+                            <div class="horizontal-line">
+                                <div class="vertical-line" id="progress">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="add" id="add">+</div>
+                        <div class="value" id="line_width_value"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="footer">
+                <div class="setting-confirm" id="setting_save">保存</div>
+                <div class="setting-reset" id="setting_reset">重置</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="./drawBoard.js"></script>
+</body>
+
+</html>
+~~~
+
+`drawBoard.js`
+
+~~~javascript
+let canvasWidth = window.innerWidth * 0.8;
+let canvasHeight = window.innerHeight * 0.88;
+
+// 拿到画板、重置按钮、保存按钮的dom元素
+let canvas = document.getElementById("canvas");
+let clear = document.getElementById("clear");
+let save = document.getElementById("save");
+// 设置相关数据
+let setting = document.getElementById("setting"); // 设置按钮dom元素
+let close = document.getElementById("close"); // 关闭设置按钮dom元素
+let line_width_value = document.getElementById("line_width_value"); // 当前值dom元素
+let add = document.getElementById("add"); // 加按钮dom元素
+let sub = document.getElementById("sub"); // 减按钮dom元素
+let line = document.getElementById("line"); // 进度线dom元素
+let progress = document.getElementById("progress"); // 进度线标签dom元素
+let setting_save = document.getElementById("setting_save"); // 保存按钮dom元素
+let setting_reset = document.getElementById("setting_reset"); // 重置按钮dom元素
+let defaultConfig = {
+  // 默认设置数据
+  lineWidth: 3,
+};
+
+let tempConfig = {
+  // 临时存的设置数据
+  lineWidth: defaultConfig.lineWidth,
+};
+// 初始化画板宽高
+canvas.width = canvasWidth;
+canvas.height = canvasHeight;
+
+// 监听窗口大小变化 实现canvas大小自适应
+window.addEventListener("resize", () => {
+  canvasWidth = window.innerWidth * 0.9;
+  canvasHeight = window.innerHeight * 0.88;
+  canvas.width = canvasWidth;
+  canvas.height = canvasHeight;
+});
+
+let startTag = false; // 开始绘画的标识 鼠标按下设为true 鼠标弹起设为false
+let ctx = canvas.getContext("2d");
+
+// 初始化
+ctx.lineWidth = defaultConfig.lineWidth; // 初始化canvas路径宽度
+line_width_value.innerText = ctx.lineWidth;
+progress.style.left = (ctx.lineWidth / 10) * 100 + "%";
+ctx.fillStyle = "#fff"; // 初始化canvas背景色
+ctx.fillRect(0, 0, canvasWidth, canvasHeight); // 填个矩形 避免下载下来的图片背景是镂空的
+// 监听鼠标按下事件
+canvas.addEventListener("mousedown", (e) => {
+  // 新建一条路径
+  ctx.beginPath();
+  // 设置路径原点为鼠标按下出
+  ctx.moveTo(e.offsetX, e.offsetY);
+  startTag = true;
+});
+
+// 监听鼠标移动事件
+canvas.addEventListener("mousemove", (e) => {
+  if (!startTag) return;
+  // 生成路径
+  ctx.lineTo(e.offsetX, e.offsetY);
+  ctx.stroke(); // 绘制当前或已经存在的路径的方法 也就是让路径看得到 默认是黑色的
+});
+
+canvas.addEventListener("mouseup", (e) => {
+  ctx.closePath();
+  startTag = false;
+});
+
+// 清除事件
+clear.onclick = () => {
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+};
+
+// 保存图片事件
+save.onclick = () => {
+  let img = canvas.toDataURL("image/jpg");
+  let a = document.createElement("a");
+  a.href = img;
+  a.download = "画板.png";
+  a.target = "_blank"; // a标签的属性target _blank表示在新标签页打开
+  a.click();
+};
+
+// 控制设置弹窗的显示
+setting.onclick = () => {
+  dialog.style.display = "block";
+};
+// 控制设置弹窗的隐藏
+close.onclick = () => {
+  ctx.lineWidth = tempConfig.lineWidth;
+  line_width_value.innerText = ctx.lineWidth;
+  progress.style.left = (ctx.lineWidth / 10) * 100 + "%";
+  dialog.style.display = "none";
+};
+
+// +
+add.onclick = () => {
+  if (ctx.lineWidth < 10) {
+    ctx.lineWidth = ctx.lineWidth + 1;
+    line_width_value.innerText = ctx.lineWidth;
+    progress.style.left = (ctx.lineWidth / 10) * 100 + "%";
+  }
+};
+
+// -
+sub.onclick = () => {
+  if (ctx.lineWidth > 1) {
+    ctx.lineWidth = ctx.lineWidth - 1;
+    line_width_value.innerText = ctx.lineWidth;
+    progress.style.left = (ctx.lineWidth / 10) * 100 + "%";
+  }
+};
+
+// 重置 恢复默认数据
+setting_reset.onclick = () => {
+  ctx.lineWidth = defaultConfig.lineWidth;
+  line_width_value.innerText = ctx.lineWidth;
+  progress.style.left = (ctx.lineWidth / 10) * 100 + "%";
+};
+
+// 保存 设置数据
+setting_save.onclick = () => {
+  tempConfig.lineWidth = ctx.lineWidth;
+  dialog.style.display = "none";
+};
+
+// 点击进度条更改值
+line.addEventListener("click", (e) => {
+  ctx.lineWidth = ((e.offsetX / 180) * 10).toFixed()
+    ? ((e.offsetX / 180) * 10).toFixed()
+    : 1;
+  line_width_value.innerText = ctx.lineWidth;
+  progress.style.left = (ctx.lineWidth / 10) * 100 + "%";
+});
+
+~~~
+
+代码上传github了：[canvas实现画板](https://github.com/WuJianR/canvas_drawBoard)，欢迎大家光临我的空间！
+
 ## 九、综合案例：时钟
+
+下面我们再实现一个案例——时钟
+
+界面展示如下：
+
+![image-20231115130747288](C:\Users\22706\AppData\Roaming\Typora\typora-user-images\image-20231115130747288.png)
+
+效果展示如下：
+
+![clock结果演示gif](D:\upgrade\canvas\result\clock\clock结果演示gif.gif)
+
+下面我们看代码：
+
+`clock.html`
+
+~~~html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>clock</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        .main-box {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+
+            #canvas {
+                border: 1px solid #000;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-box">
+        <canvas id="canvas" width="600" height="600"></canvas>
+    </div>
+    <script src="./clock.js"></script>
+</body>
+
+</html>
+~~~
+
+`clock.js`
+
+~~~javascript
+/**
+ * window.requestAnimationFrame()告诉浏览器——你希望执行一个动画，并且要求浏览器在下次重绘之前调用指定的回调函数更新动画
+ * 该方法需要传入一个回调函数作为参数，该回调函数会在浏览器下一次重绘之前执行
+ */
+let animate = (time) => {
+  let now = new Date();
+  let hour = now.getHours();
+  let minus = now.getMinutes();
+  let second = now.getSeconds();
+  hour = hour % 12;
+  let ctx = document.getElementById("canvas").getContext("2d");
+  ctx.clearRect(0, 0, 600, 600);
+  // 保存默认状态
+  ctx.save();
+  ctx.lineWidth = 10;
+  // 画个圆
+  ctx.beginPath();
+  ctx.arc(300, 300, 250, 0, Math.PI * 2);
+  ctx.stroke();
+  // 画完圆后恢复到默认状态
+  ctx.restore();
+  // 画小时数字
+  ctx.save();
+  ctx.lineWidth = 2;
+  ctx.translate(300, 300);
+  ctx.beginPath();
+  ctx.font = "48px serif";
+  for (let i = 0; i < 12; i++) {
+    let x = Math.sin((Math.PI / 6) * (i + 1)) * 180;
+    let y = Math.cos((Math.PI / 6) * (i + 1)) * 180 * -1;  // 注意 这里一定要乘以负一
+    // console.log(x, "x", y, "y");
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.strokeText((i + 1).toString(), x, y);
+  }
+  ctx.restore();
+  // 保存默认状态
+  ctx.save();
+  // canvas初始化：原点移到canvas中心，旋转-90度，因为默认选择是从左上角原点y轴方向开始旋转的
+  ctx.translate(300, 300);
+  ctx.rotate(-Math.PI / 2);
+  ctx.lineCap = "round";
+
+  // 画小时刻度
+  // 保存初始化
+  ctx.save();
+  ctx.lineWidth = 8;
+  ctx.beginPath();
+  for (let i = 0; i < 12; i++) {
+    ctx.rotate((Math.PI / 180) * 30);
+    ctx.moveTo(210, 0);
+    ctx.lineTo(250, 0);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // 画分钟刻度
+  ctx.save();
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  for (let i = 0; i < 60; i++) {
+    ctx.rotate((Math.PI / 180) * 6);
+    ctx.moveTo(230, 0);
+    ctx.lineTo(250, 0);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // 画时针
+  ctx.save();
+  ctx.beginPath();
+  ctx.lineWidth = 20;
+  ctx.rotate((Math.PI / 6) * (hour + minus / 60 + second / 3600));
+  ctx.moveTo(-60, 0);
+  ctx.lineTo(140, 0);
+  ctx.stroke();
+  ctx.restore();
+
+  // 画分针
+  ctx.save();
+  ctx.beginPath();
+  ctx.lineWidth = 14;
+  ctx.rotate((Math.PI / 30) * (minus + second / 60));
+  ctx.moveTo(-60, 0);
+  ctx.lineTo(190, 0);
+  ctx.stroke();
+  ctx.restore();
+
+  // 画秒针
+  ctx.save();
+  ctx.beginPath();
+  ctx.lineWidth = 10;
+  ctx.rotate((Math.PI / 30) * second);
+  ctx.moveTo(-60, 0);
+  ctx.lineTo(220, 0);
+  ctx.strokeStyle = "#f00";
+  ctx.stroke();
+  ctx.restore();
+
+  // 画圆心
+  ctx.save();
+  ctx.beginPath();
+  ctx.fillStyle = "#f00";
+  ctx.arc(0, 0, 15, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.restore();
+  window.requestAnimationFrame(animate);
+};
+
+window.requestAnimationFrame(animate);
+~~~
+
+需要注意的是：
+
+1. 在修改默认状态前一定要先`save`状态
+2. 每画一部分内容记得`restore`状态，并且使用`beiginPath`重新开始绘制，否则画出的结果将会出现奇怪的内容，比如页面无限闪动、偏移等问题
+
+## 十、更多内容
+
+以上是我所介绍的`canvas`所有基础内容。
+
+更多内容建议查看[MDN——canvas教程](https://developer.mozilla.org/zh-CN/docs/Web/API/Canvas_API/Tutorial)。
