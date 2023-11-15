@@ -1153,6 +1153,8 @@ window.requestAnimationFrame(animate);
 1. 在修改默认状态前一定要先`save`状态
 2. 每画一部分内容记得`restore`状态，并且使用`beiginPath`重新开始绘制，否则画出的结果将会出现奇怪的内容，比如页面无限闪动、偏移等问题
 
+源码同样上传了github:[canvas实现clock](https://github.com/WuJianR/drawboard-clock)。欢迎访问！
+
 ## 十、更多内容
 
 以上是我所介绍的`canvas`所有基础内容。
