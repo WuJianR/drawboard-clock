@@ -18,6 +18,29 @@
             position: relative;
             overflow: hidden;
             user-select: none;
+
+            #watermark {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100vw;
+                height: 100vh;
+                z-index: 9999999;
+                font-size: 30px;
+                color: #d6c7c738;
+                font-weight: 700;
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: space-evenly;
+                align-content: space-evenly;
+                /* 不能点击 */
+                pointer-events: none;
+            }
+
+            #watermark span {
+                transform: rotate(45deg);
+            }
+
             .bgc {
                 z-index: -1;
                 position: absolute;
@@ -28,7 +51,11 @@
             }
 
             .operate-box {
+                position: absolute;
+                z-index: 10;
+                top: 0px;
                 height: 32px;
+                width: 100%;
                 line-height: 30px;
                 display: flex;
                 /* column-gap: 20px; */
@@ -145,6 +172,7 @@
                                 align-items: center;
                                 width: 180px;
                                 cursor: pointer;
+
                                 .horizontal-line {
                                     position: relative;
                                     width: 100%;
@@ -190,9 +218,24 @@
 </head>
 
 <body>
-    <div class="main-box">
+    <div class="main-box" id="main-box">
+        <!-- 水印 -->
+        <div id="watermark">
+            <span>这是一条水印</span>
+            <span>这是一条水印</span>
+            <span>这是一条水印</span>
+            <span>这是一条水印</span>
+            <span>这是一条水印</span>
+            <span>这是一条水印</span>
+            <span>这是一条水印</span>
+            <span>这是一条水印</span>
+            <span>这是一条水印</span>
+            <span>这是一条水印</span>
+            <span>这是一条水印</span>
+            <span>这是一条水印</span>
+        </div>
         <!-- 背景图 -->
-        <img class="bgc" src="./images/bgc_1.jpg" alt="">
+        <img id="bgc" class="bgc" src="./images/bgc_1.jpg" alt="">
         <!-- 操作栏 -->
         <div class="operate-box">
             <div class="title">这是一块画板</div>

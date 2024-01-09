@@ -134,3 +134,111 @@ line.addEventListener("click", (e) => {
   line_width_value.innerText = ctx.lineWidth;
   progress.style.left = (ctx.lineWidth / 10) * 100 + "%";
 });
+
+// 禁用右键，让鼠标无法通过右键打开控制台
+document.addEventListener("contextmenu", (e) => {
+  e.preventDefault(); // 阻止默认的右键菜单
+});
+// 禁用打开控制台
+document.addEventListener("keydown", (e) => {
+  if (
+    e.code == "F12" || // 阻止默认的F12打开控制台操作
+    (e.ctrlKey && e.code == "KeyF") || // 禁用F12之后 ctrl+f打开搜索后还能按f12 因此禁用ctrl+f 缺点是页面不能使用搜索功能了
+    (e.ctrlKey && e.shiftKey && e.code == "KeyI") // 禁用ctrl+shift+I 打开控制台的组合键
+  ) {
+    e.preventDefault();
+    return false;
+  } else {
+    return true; // 允许其他操作
+  }
+});
+// 通过上面的禁用后键盘无法再打开控制台，但是可以点击浏览器的设置打开控制台，这里增加监听窗口大小变化来判断是否打开控制台
+// window.addEventListener("resize", (e) => {
+//   let threshold = 100;
+//   // 窗口外部宽度-窗口内部宽超过100就判断窗口被打开了
+//   let width = window.outerWidth - window.innerWidth > threshold;
+//   let height = window.outerHeight - window.innerHeight > threshold;
+//   if (width || height) {
+//     alert("请不要打开控制台")
+//   }
+// });
+
+// 打开控制台就debugger 但是容易被破解 打开控制台后在断点处右键选择一律不在此处暂停就破解了
+setInterval(() => {
+  debugger;
+}, 100);
+
+// 把图片转成canvas 这样就实现了打开控制台也不让下载图片
+const mainbox = document.getElementById("main-box");
+// img转canvas
+const img2 = document.querySelector("img");
+const canvas2 = document.createElement("canvas");
+canvas2.width = img2.width;
+canvas2.height = img2.height;
+canvas2.style.position = "absolute";
+canvas2.style.top = "50%";
+canvas2.style.left = "50%";
+canvas2.style.transform = "translate(-50%, -50%)";
+canvas2.style.zIndex = "-1";
+canvas2.style.objectFit = "cover";
+const ctx2 = canvas2.getContext("2d");
+ctx2.drawImage(img2, 0, 0, img2.width, img2.height);
+// 将canvas插入到img前面，然后移除img
+mainbox.insertBefore(canvas2, img2);
+mainbox.removeChild(img2);
+
+// 水印监听功能 水印dom被删除后重新生成
+function mutationWatermark() {
+  // 定义MutationObserver实例observe方法的配置对象
+  const config = {
+    childList: true, // 子节点的变化，例如节点添加或删除
+    subtree: true, // 监听子树节点
+    aributes: true, // 监听属性变化
+    characterData: true, // 监听文本节点
+  };
+  // 拿到水印大盒子 并克隆一份备用 插入时使用
+  let watermark = document.querySelector("#watermark");
+  let _watermark = watermark.cloneNode(true);
+  // 获取水印dom节点的父节点
+  const p_watermark = watermark.parentNode;
+  // 获取水印dom的后一个节点
+  let referenceNode;
+  [...p_watermark.children].forEach((item, index) => {
+    if (item === watermark) {
+      referenceNode = p_watermark.children[index + 1];
+    }
+  });
+  // 创建MutationObserver实例
+  const observer = new MutationObserver((mutationsList) => {
+    // 拿到水印子盒子 并克隆一份备用 插入时使用
+    const wm_child = watermark.getElementsByTagName("span")[0];
+    const _wm_child = wm_child.cloneNode(true);
+    // 遍历所有变化
+    for (let mutation of mutationsList) {
+      // 判断是否是水印的整个盒子div节点被删除
+      if (
+        mutation.target == mainbox &&
+        mutation.type == "childList" &&
+        mutation.removedNodes.length > 0
+      ) {
+        // 重新插入水印节点div到水印的后一个孩子前面
+        p_watermark.insertBefore(_watermark, referenceNode);
+        // 重新拿到watermark盒子
+        watermark = document.querySelector("#watermark");
+        _watermark = watermark.cloneNode(true);
+      }
+      // 判断是否是水印孩子span节点被删除
+      if (
+        mutation.target === watermark &&
+        mutation.type === "childList" &&
+        mutation.removedNodes.length > 0
+      ) {
+        // 重新插入水印节点
+        watermark.appendChild(_wm_child);
+      }
+    }
+  });
+  // 监听目标节点
+  observer.observe(mainbox, config);
+}
+addWatermark();
